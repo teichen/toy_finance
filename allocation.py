@@ -15,7 +15,7 @@ def calculate_allocation():
     allocations = []
 
     for req in allocation_requests:
-        allocation = objective(req)
+        allocation = optimal_allocation(req)
 
         allocations += [allocation]
 
@@ -29,51 +29,101 @@ def add_request():
 
     return '', 204
 
-def objective():
+def optimal_allocation(req):
     """ allocation of disposable income based on future assets and liabilities
     """
-    net_worth = 0.0 # assets - liabilities
+    uniform_allocation = float(req['disposable_income']) / 3
 
-    r  = float(config['mortgage']['rate'] / 100 / 12)
-    p0 = float(config['mortgage']['initial_principal'])
+    prepayment   = uniform_allocation
+    contribution = uniform_allocation
+    
+    w0 = objective(req, prepayment, contribution) # initial guess
+    dw = -1e10
+    
+    p_max = -1
+    c_max = -1
 
-    prepayment = 100 # optimize this quantity
+    while dw > 0:
+        # save off last calculated allocation
+        if p_max >= 0 and c_min >= 0:
+            prepayment   = p_min
+            contribution = c_min
 
-    future_mortgage_interest = mortgage_interest(r, p0, prepayment)
+        # test steps in each direction
+        w_max = -1e10
+        p_max = -1
+        c_max = -1
+        w_nearest = {}
+        for p in [prepayment - 1, prepayment, prepayment + 1]:
+            w_nearest[p] = {}
+            for c in [contribution - 1, contribution, constribution + 1]:
+                w_nearest[p][c] = objective(req, p, c)
 
-    contribution = 100 # optimize this quantity
-    r  = float(req['annual_529_rate']) # assume time-local rate carries into the future
-    p0 = float(req['past_529_contributions'])
-    interest = compound_interest_529(r, p0, contribution)
+                if w_nearest[p][c] < w_min:
+                    w_max = w_nearest[p][c]
+                    p_max = p
+                    c_max = c
+
+        if p_max < 0 or c_max < 0:
+            break
+
+        w  = w_min
+        dw = w - w0
+
+    mortgage_payment = prepayment
+    contribution_529 = contribution
+    retirement = float(req['disposable_income']) - mortgage_payment - contribution_529
 
     allocation = {}
-    allocation['mortgage_payment']   = float(req['disposable_income']) / 3
-    allocation['retirement_payment'] = float(req['disposable_income']) / 3
-    allocation['529_payment']        = float(req['disposable_income']) / 3
+    allocation['mortgage_payment']        = mortgage_payment
+    allocation['retirement_contribution'] = retirement
+    allocation['529_contribution']        = contribution_529
 
     return allocation
+
+def objective(req, prepayment, contribution):
+    """
+    """
+    r  = float(config['mortgage']['rate'] / 100 / 12)
+    p0 = float(config['mortgage']['initial_principal'])
+    future_mortgage_interest = mortgage_interest(r, p0, prepayment)
+
+    r  = float(req['annual_529_rate'] / 100 / 12) # assume time-local rate carries into the future
+    p0 = float(req['past_529_contributions'])
+    n  = int(req['years_to_529_withdrawal'] * 12)
+    interest_529 = compound_interest(r, p0, contribution, n)
+
+    r  = float(req['annual_401k_rate'] / 100 / 12)
+    p0 = float(req['past_401k_contributions'])
+    n  = int(req['years_to_401k_withdrawal'] * 12)
+    retirement = (float(req['disposable_income']) - prepayment - contribution
+    interest_401k = compound_interest(r, p0, retirement, n)
+
+    # net_worth = assets - liabilities
+    net_worth = interest_401k + interest_529 - future_mortgage_interest
+
+    return net_worth
 
 def mortgage_interest(r, p0, prepayment):
     """
     """
-    future_mortgage_interest = 0.0
+    interest = 0.0
     
     minimum_monthly_payment = r / (1 - (1 + r) ** (-30 * 12)) * p0
 
     p = float(req['mortgage_principal'])
     i = 0
     while p > 0 and i < 30*12:
-        future_mortgage_interest += p * r
+        interest += p * r
         p += p * r - minimum_monthly_payment
         i += 1
 
-    return future_mortgage_interest
+    return interest
 
-def compound_interest_529(r, p0, contribution):
+def compound_interest(r, p0, contribution, n):
     """
     """
-    interest = 0.0
-
-    # TODO
+    p = p0 + contribution
+    interest = p * ((1 + r) ** n - p)
 
     return interest
