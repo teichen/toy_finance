@@ -68,6 +68,10 @@ def optimal_allocation(req):
         if p_max < 0 or c_max < 0:
             break
 
+        retirement = float(req['disposable_income']) - p_max - c_max
+        if retirement < 0:
+            break
+
         w  = w_max
         dw = w - w0
         w0 = w
