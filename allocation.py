@@ -38,16 +38,17 @@ def optimal_allocation(req):
     contribution = uniform_allocation
     
     w0 = objective(req, prepayment, contribution) # initial guess
-    dw = -1e10
+    dw = 1e10
     
     p_max = -1
     c_max = -1
 
     while dw > 0:
+        print(dw)
         # save off last calculated allocation
-        if p_max >= 0 and c_min >= 0:
-            prepayment   = p_min
-            contribution = c_min
+        if p_max >= 0 and c_max >= 0:
+            prepayment   = p_max
+            contribution = c_max
 
         # test steps in each direction
         w_max = -1e10
@@ -56,10 +57,10 @@ def optimal_allocation(req):
         w_nearest = {}
         for p in [prepayment - 1, prepayment, prepayment + 1]:
             w_nearest[p] = {}
-            for c in [contribution - 1, contribution, constribution + 1]:
+            for c in [contribution - 1, contribution, contribution + 1]:
                 w_nearest[p][c] = objective(req, p, c)
 
-                if w_nearest[p][c] < w_min:
+                if w_nearest[p][c] > w_max:
                     w_max = w_nearest[p][c]
                     p_max = p
                     c_max = c
@@ -67,8 +68,9 @@ def optimal_allocation(req):
         if p_max < 0 or c_max < 0:
             break
 
-        w  = w_min
+        w  = w_max
         dw = w - w0
+        w0 = w
 
     mortgage_payment = prepayment
     contribution_529 = contribution
@@ -84,19 +86,19 @@ def optimal_allocation(req):
 def objective(req, prepayment, contribution):
     """
     """
-    r  = float(config['mortgage']['rate'] / 100 / 12)
+    r  = float(config['mortgage']['rate']) / 100 / 12
     p0 = float(config['mortgage']['initial_principal'])
-    future_mortgage_interest = mortgage_interest(r, p0, prepayment)
+    future_mortgage_interest = mortgage_interest(req, r, p0, prepayment)
 
-    r  = float(req['annual_529_rate'] / 100 / 12) # assume time-local rate carries into the future
+    r  = float(req['annual_529_rate']) / 100 / 12 # assume time-local rate carries into the future
     p0 = float(req['past_529_contributions'])
     n  = int(req['years_to_529_withdrawal'] * 12)
     interest_529 = compound_interest(r, p0, contribution, n)
 
-    r  = float(req['annual_401k_rate'] / 100 / 12)
+    r  = float(req['annual_401k_rate']) / 100 / 12
     p0 = float(req['past_401k_contributions'])
     n  = int(req['years_to_401k_withdrawal'] * 12)
-    retirement = (float(req['disposable_income']) - prepayment - contribution
+    retirement = float(req['disposable_income']) - prepayment - contribution
     interest_401k = compound_interest(r, p0, retirement, n)
 
     # net_worth = assets - liabilities
@@ -104,7 +106,7 @@ def objective(req, prepayment, contribution):
 
     return net_worth
 
-def mortgage_interest(r, p0, prepayment):
+def mortgage_interest(req, r, p0, prepayment):
     """
     """
     interest = 0.0
