@@ -44,7 +44,6 @@ def optimal_allocation(req):
     c_max = -1
 
     while dw > 0:
-        print(dw)
         # save off last calculated allocation
         if p_max >= 0 and c_max >= 0:
             prepayment   = p_max
@@ -91,8 +90,9 @@ def objective(req, prepayment, contribution):
     """
     """
     r  = float(config['mortgage']['rate']) / 100 / 12
-    p0 = float(config['mortgage']['initial_principal'])
-    future_mortgage_interest = mortgage_interest(req, r, p0, prepayment)
+    p0 = float(req['mortgage_principal']) # float(config['mortgage']['initial_principal'])
+    p = float(req['mortgage_principal'])
+    future_mortgage_interest = mortgage_interest(r, p0, p, prepayment)
 
     r  = float(req['annual_529_rate']) / 100 / 12 # assume time-local rate carries into the future
     p0 = float(req['past_529_contributions'])
@@ -110,14 +110,15 @@ def objective(req, prepayment, contribution):
 
     return net_worth
 
-def mortgage_interest(req, r, p0, prepayment):
+def mortgage_interest(r, p0, p, prepayment):
     """
     """
     interest = 0.0
     
-    minimum_monthly_payment = r / (1 - (1 + r) ** (-30 * 12)) * p0
+    minimum_monthly_payment = r * (1 + r) ** (30 * 12) / ((1 + r) ** (30 * 12) - 1) * p0
 
-    p = float(req['mortgage_principal'])
+    p = p - prepayment
+
     i = 0
     while p > 0 and i < 30*12:
         interest += p * r

@@ -6,7 +6,7 @@ req = {
         "annual_529_rate": 2.0, 
         "past_529_contributions": 10000, 
         "years_to_529_withdrawal": 15, 
-        "mortgage_principal": 300000, 
+        "mortgage_principal": 100000, 
         "monthly_retirement": 4000, 
         "annual_401k_rate": 5.0, 
         "past_401k_contributions": 30000, 
