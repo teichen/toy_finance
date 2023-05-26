@@ -1,3 +1,4 @@
 # DEPENDENCIES:
 Flask==2.2.5
 configparser==5.3.0
+scipy==1.7.3

@@ -1,5 +1,7 @@
 from flask import Flask, jsonify, request
 import configparser
+import numpy as np
+from scipy import optimize
 
 app = Flask(__name__)
 
@@ -37,43 +39,16 @@ def optimal_allocation(req):
     prepayment   = uniform_allocation
     contribution = uniform_allocation
     
-    w0 = objective(req, prepayment, contribution) # initial guess
-    dw = 1e10
-    
-    p_max = -1
-    c_max = -1
+    x0 = np.array([prepayment, contribution])
 
-    while dw > 0:
-        # save off last calculated allocation
-        if p_max >= 0 and c_max >= 0:
-            prepayment   = p_max
-            contribution = c_max
+    alloc = optimize.minimize(objective, x0, args=(req, ), method='COBYLA',
+            constraints=(
+                {'type': 'ineq', 'fun': lambda x: x[0]},
+                {'type': 'ineq', 'fun': lambda x: x[1]},
+                {'type': 'ineq', 'fun': lambda x: float(req['disposable_income']) - x[0] - x[1]}))
 
-        # test steps in each direction
-        w_max = -1e10
-        p_max = -1
-        c_max = -1
-        w_nearest = {}
-        for p in [prepayment - 1, prepayment, prepayment + 1]:
-            w_nearest[p] = {}
-            for c in [contribution - 1, contribution, contribution + 1]:
-                w_nearest[p][c] = objective(req, p, c)
-
-                if w_nearest[p][c] > w_max:
-                    w_max = w_nearest[p][c]
-                    p_max = p
-                    c_max = c
-
-        if p_max < 0 or c_max < 0:
-            break
-
-        retirement = float(req['disposable_income']) - p_max - c_max
-        if retirement < 0:
-            break
-
-        w  = w_max
-        dw = w - w0
-        w0 = w
+    prepayment   = alloc.x[0]
+    contribution = alloc.x[1]
 
     mortgage_payment = prepayment
     contribution_529 = contribution
@@ -86,12 +61,18 @@ def optimal_allocation(req):
 
     return allocation
 
-def objective(req, prepayment, contribution):
+def objective(x, req):
     """
+        Args:
+            x (np.array): inputs, x[0] = prepayment, x[1] = contribution
+            req (dict): request inputs dictionary
     """
+    prepayment   = x[0]
+    contribution = x[1]
+
     r  = float(config['mortgage']['rate']) / 100 / 12
     p0 = float(req['mortgage_principal']) # float(config['mortgage']['initial_principal'])
-    p = float(req['mortgage_principal'])
+    p  = float(req['mortgage_principal'])
     future_mortgage_interest = mortgage_interest(r, p0, p, prepayment)
 
     r  = float(req['annual_529_rate']) / 100 / 12 # assume time-local rate carries into the future
@@ -107,6 +88,10 @@ def objective(req, prepayment, contribution):
 
     # net_worth = assets - liabilities
     net_worth = interest_401k + interest_529 - future_mortgage_interest
+
+    # constraint
+    if retirement < 0:
+        net_worth -= 1e10
 
     return net_worth
 
