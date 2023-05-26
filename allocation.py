@@ -41,7 +41,7 @@ def optimal_allocation(req):
     
     x0 = np.array([prepayment, contribution])
 
-    alloc = optimize.minimize(objective, x0, args=(req, ), method='COBYLA',
+    alloc = optimize.minimize(objective, x0, args=(req, ), method='SLSQP',
             constraints=(
                 {'type': 'ineq', 'fun': lambda x: x[0]},
                 {'type': 'ineq', 'fun': lambda x: x[1]},
@@ -71,23 +71,28 @@ def objective(x, req):
     contribution = x[1]
 
     r  = float(config['mortgage']['rate']) / 100 / 12
-    p0 = float(req['mortgage_principal']) # float(config['mortgage']['initial_principal'])
+    p0 = float(config['mortgage']['initial_principal'])
     p  = float(req['mortgage_principal'])
     future_mortgage_interest = mortgage_interest(r, p0, p, prepayment)
+
+    downpayment = float(config['mortgage']['downpayment'])
+    housing_appreciation = (p0 + downpayment) * float(config['mortgage']['appreciation']) / 100
 
     r  = float(req['annual_529_rate']) / 100 / 12 # assume time-local rate carries into the future
     p0 = float(req['past_529_contributions'])
     n  = int(req['years_to_529_withdrawal'] * 12)
-    interest_529 = compound_interest(r, p0, contribution, n)
+    interest_529  = compound_interest(r, p0, contribution, n)
 
     r  = float(req['annual_401k_rate']) / 100 / 12
     p0 = float(req['past_401k_contributions'])
     n  = int(req['years_to_401k_withdrawal'] * 12)
     retirement = float(req['disposable_income']) - prepayment - contribution
-    interest_401k = compound_interest(r, p0, retirement, n)
+    interest_401k  = compound_interest(r, p0, retirement, n)
+    interest_401k *= (1.0 - float(config['tax']['rate']) / 100) # taxed interest
 
+    # float(config['inflation']['rate'])
     # net_worth = assets - liabilities
-    net_worth = interest_401k + interest_529 - future_mortgage_interest
+    net_worth = interest_401k + interest_529 + housing_appreciation - future_mortgage_interest
 
     # constraint
     if retirement < 0:

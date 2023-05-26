@@ -2,7 +2,6 @@ import allocation
 
 req = {
         "disposable_income": 2000, 
-        "inflation_rate": 5.0, 
         "annual_529_rate": 2.0, 
         "past_529_contributions": 10000, 
         "years_to_529_withdrawal": 15, 
