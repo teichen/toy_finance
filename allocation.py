@@ -6,7 +6,7 @@ from scipy import optimize
 app = Flask(__name__)
 
 config = configparser.ConfigParser()
-config.read('assets_liabilities.ini')
+config.read('finances.ini')
 
 allocation_requests = []
 
