@@ -5,6 +5,7 @@ from scipy import optimize
 import redis
 from redis import StrictRedis
 from rq import Queue
+from rq.job import Job
 from Allocation import Allocation
 
 app = Flask(__name__)
@@ -37,9 +38,16 @@ def calculate_allocation():
     allocations = []
 
     for req in allocation_requests:
-        allocation = optimal_allocation(req)
+        req_json = jsonify(req)
+        db.publish(queue_name, req_json) # or rpush?
 
-        allocations += [allocation]
+        # TODO: wait time
+
+        queue.enqueue_call(calculate_allocation, (args) , job_id=job_id, timeout=100000)
+
+        job = Job.fetch(id='my_id', connection=redis)
+        for result in job.results(): 
+            allocations += [result.created_at]
 
     return jsonify(allocations)
 
