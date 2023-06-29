@@ -12,3 +12,11 @@ screen -ls to check screens
 screen -S redis (screen -r redis if screen already exists)
 redis-server --port 8001
 [ctrl]a+d to detach screen
+
+# to start the Worker
+screen -S worker
+python Allocation.py
+[ctrl]a+d
+
+# to start the application
+./run.sh

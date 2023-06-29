@@ -6,7 +6,7 @@ import redis
 from redis import StrictRedis
 from rq import Queue
 from rq.job import Job
-from Allocation import Allocation
+#from Allocation import optimal_allocation
 
 app = Flask(__name__)
 
@@ -29,11 +29,13 @@ queue = Queue(queue_name, default_timeout=10000000, connection=redis_conn)
 p = db.pubsub()
 p.subscribe(queue_name)
 
+job_id = 'test'
+
 allocation_requests = []
 
 @app.route("/allocation_requests")
 
-def calculate_allocation():
+def allocation_job():
 
     allocations = []
 
@@ -43,9 +45,10 @@ def calculate_allocation():
 
         # TODO: wait time
 
-        queue.enqueue_call(calculate_allocation, (args) , job_id=job_id, timeout=100000)
+        # is enqueue_call necessary?
+        # queue.enqueue_call(optimal_allocation, job_id=job_id, timeout=100000)
 
-        job = Job.fetch(id='my_id', connection=redis)
+        job = Job.fetch(id=job_id, connection=redis)
         for result in job.results(): 
             allocations += [result.created_at]
 

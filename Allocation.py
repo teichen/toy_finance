@@ -4,7 +4,7 @@ import numpy as np
 from scipy import optimize
 import redis
 from redis import StrictRedis
-from rq import Queue
+from rq import Queue, Worker
 
 class Allocation:
     __metaclass__ = abc.ABCMeta
@@ -27,6 +27,9 @@ class Allocation:
         redis_conn = redis.from_url(redis_url)
         queue = Queue(queue_name, default_timeout=10000000, connection=redis_conn)
 
+        subscribe()
+        listen()
+
     def subscribe(self):
         """
         """
@@ -47,17 +50,18 @@ class Allocation:
     def parse_message(message):
         """
         """
+        print(message)
         req = {}
-        req['disposable_income'] = message
-        req['annual_529_rate'] = 
-        req['past_529_contributions'] = 
-        req['years_to_529_withdrawal'] = 
-        req['mortgage_principal'] = 
-        req['monthly_principal'] = 
-        req['annual_401k_rate'] = 
-        req['past_401k_contributions'] = 
-        req['years_to_401k_withdrawal'] = 
-        req['state_tuition'] = 
+        #req['disposable_income'] = message
+        #req['annual_529_rate'] = 
+        #req['past_529_contributions'] = 
+        #req['years_to_529_withdrawal'] = 
+        #req['mortgage_principal'] = 
+        #req['monthly_principal'] = 
+        #req['annual_401k_rate'] = 
+        #req['past_401k_contributions'] = 
+        #req['years_to_401k_withdrawal'] = 
+        #req['state_tuition'] = 
 
     def optimal_allocation(req):
         """ allocation of disposable income based on future assets and liabilities
