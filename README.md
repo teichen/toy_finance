@@ -7,15 +7,15 @@ docker run -d --name redis-stack -p 6379:6379 -p 8001:8001 redis/redis-stack:lat
 # to check database services:
 docker ps
 
-# to start the redis TaskQueue
+# to start redis db
 screen -ls to check screens
 screen -S redis (screen -r redis if screen already exists)
 redis-server --port 8001
 [ctrl]a+d to detach screen
 
-# to start the Worker
-screen -S worker
-python Allocation.py
+# to start the Controller
+screen -S controller
+python Controller.py
 [ctrl]a+d
 
 # to start the application
