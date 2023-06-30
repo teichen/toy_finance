@@ -1,4 +1,6 @@
-import allocation
+import subprocess
+
+ALLOCATION_CALC = 'bin/optimal_allocation.py'
 
 req = {
         "disposable_income": 2000, 
@@ -12,7 +14,7 @@ req = {
         "years_to_401k_withdrawal": 25, 
         "state_tuition": 12000}
 
-a = allocation.optimal_allocation(req)
+a = subprocess.run(['python', ALLOCATION_CALC], capture_output=True, text=True)
 
 print(a)
 

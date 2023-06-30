@@ -15,8 +15,8 @@ redis-server --port 8001
 
 # to start the Controller
 screen -S controller
-python Controller.py
+python bin/run_controller.py
 [ctrl]a+d
 
 # to start the application
-./run.sh
+./run_application.sh

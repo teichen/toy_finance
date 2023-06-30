@@ -10,7 +10,6 @@ import redis
 from redis import StrictRedis
 from rq import Queue
 from rq.job import Job
-#from Allocation import optimal_allocation
 
 app = Flask(__name__)
 
@@ -29,10 +28,6 @@ redis_url = 'redis://' + redis_address + ':' + str(redis_port) # application end
 redis_conn = redis.from_url(redis_url)
 queue = Queue(queue_name, default_timeout=10000000, connection=redis_conn)
 
-# subscribe to the redis TaskQueue
-p = db.pubsub()
-p.subscribe(queue_name)
-
 job_id = 'test'
 
 allocation_requests = []
@@ -48,9 +43,6 @@ def allocation_job():
         db.publish(queue_name, req_json) # or rpush?
 
         # TODO: wait time
-
-        # is enqueue_call necessary?
-        # queue.enqueue_call(optimal_allocation, job_id=job_id, timeout=100000)
 
         job = Job.fetch(id=job_id, connection=redis)
         for result in job.results(): 
