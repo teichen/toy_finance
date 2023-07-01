@@ -5,6 +5,7 @@ import redis
 from redis import StrictRedis
 from rq import Queue, Worker
 from rq.job import Job
+from rq.command import send_shutdown_command
 
 job_id = 'test'
 
@@ -27,13 +28,23 @@ class Controller:
 
         redis_url = 'redis://' + redis_address + ':' + str(redis_port)
         redis_conn = redis.from_url(redis_url)
-        queue = Queue(queue_name, default_timeout=10000000, connection=redis_conn)
+        self.queue = Queue(self.queue_name, default_timeout=10000000, connection=redis_conn)
 
-    def run():
+    def run(self):
         """
         """
         # queue job
         queue_job()
+
+        subscribe()
+        
+        # listen and shutdown/bootup workers accordingly
+        for message in self.p.listen():
+            req = parse_message(message)
+            allocation = optimal_allocation(req)
+
+            return_data = format_data(allocation)
+            self.db.publish(self.queue_name, return_data)
 
         # start worker
         start_worker()
@@ -47,14 +58,19 @@ class Controller:
     def start_worker(self):
         """
         """
-        w = Worker(queue, ...)
-        w.work(burst=True)
+        w = Worker(self.queue, connection=self.db, name='test')
+        w.work(burst=True) # stop after all jobs processed
+
+    def shutdown_worker():
+        """ send shutdown signal (similar to SIGINT) to a worker
+        """
+        send_shutdown_command(self.db, 'test')
 
     def job_check(self):
         """ wait by iteratively checking if jobs complete
         """
         while True:
-            job = Job.fetch(job_id, connection=redis)
+            job = Job.fetch(job_id, connection=self.db)
 
     def subscribe(self):
         """ subscribe to redis via pubsub
@@ -62,24 +78,5 @@ class Controller:
         # subscribe to the redis TaskQueue
         self.p = self.db.pubsub()
         self.p.subscribe(self.queue_name)
-
-    def listen(self):
-        """ listen and shutdown/bootup workers accordingly
-        """
-        for message in self.p.listen():
-            req = parse_message(message)
-            allocation = optimal_allocation(req)
-
-            return_data = format_data(allocation)
-            self.db.publish(self.queue_name, return_data)
-
-    def boot_worker():
-        """
-        """
-        job = queue.enqueue_call(optimal_allocation, args=(), timeout=100000)
-
-    def shutdown_worker():
-        """
-        """
 
 ALLOCATION_CALC = 'bin/optimal_allocation.py'
