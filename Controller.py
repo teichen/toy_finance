@@ -33,21 +33,27 @@ class Controller:
     def run(self):
         """
         """
+        # workers off by default
+        subscribe()
+        signal_shutdown()
+        echo_listen()
+
         # queue job
         queue_job()
 
-        subscribe()
-        
-        # listen and shutdown/bootup workers accordingly
-        for message in self.p.listen():
-            req = parse_message(message)
-            allocation = optimal_allocation(req)
+        # overkill method to start a worker via redis
+        signal_boot()
+        echo_listen()
 
-            return_data = format_data(allocation)
-            self.db.publish(self.queue_name, return_data)
+        # check for completion
+        job_check()
 
-        # start worker
-        start_worker()
+        # parse results
+
+    req = parse_message(message)
+    allocation = optimal_allocation(req)
+    return_data = format_data(allocation)
+    self.db.publish(self.queue_name, return_data)
 
     def queue_job(self):
         """
@@ -78,5 +84,25 @@ class Controller:
         # subscribe to the redis TaskQueue
         self.p = self.db.pubsub()
         self.p.subscribe(self.queue_name)
+
+    def signal_shutdown(self):
+        """
+        """
+        self.db.rpush('test', 'shutdown'
+
+    def signal_boot(self):
+        """
+        """
+        self.db.lrem('test', 0, 'shutdown')
+
+    def echo_listen(self):
+        """ contrived pulse of a pubsub listen with worker response
+        """
+        # listen and shutdown/bootup workers accordingly
+        for message in self.p.listen():
+            if 'delete' in message:
+                shutdown_worker()
+            elif 'boot' in message:
+                start_worker()
 
 ALLOCATION_CALC = 'bin/optimal_allocation.py'

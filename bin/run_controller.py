@@ -14,5 +14,6 @@ def run():
     q = Queue('test', connection=Redis())
     job = q.enqueue_call(c.run, (), job_id=job_id, timeout=10000)
 
+
 if __name__ == "__main__":
     run()
