@@ -40,13 +40,18 @@ def allocation_job():
 
     for req in allocation_requests:
         req_json = jsonify(req)
-        db.publish(queue_name, req_json) # or rpush?
+
+        #db.rpush(name, data) # push any requisite data
+        db.publish(queue_name, req_json) # publish message
 
         # TODO: wait time
 
         job = Job.fetch(id=job_id, connection=redis)
-        for result in job.results(): 
-            allocations += [result.created_at]
+        for result in job.results():
+            if result.Type.SUCCESSFUL:
+                allocations += [result.return_value]
+            else:
+                allocations += [result.created_at]
 
     return jsonify(allocations)
 

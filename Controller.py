@@ -50,7 +50,6 @@ class Controller:
 
         # parse results
 
-    req = parse_message(message)
     allocation = optimal_allocation(req)
     return_data = format_data(allocation)
     self.db.publish(self.queue_name, return_data)
@@ -77,6 +76,8 @@ class Controller:
         """
         while True:
             job = Job.fetch(job_id, connection=self.db)
+            if job.is_finished:
+                break
 
     def subscribe(self):
         """ subscribe to redis via pubsub
