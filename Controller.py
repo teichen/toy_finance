@@ -36,10 +36,10 @@ class Controller:
         # workers off by default
         subscribe()
         signal_shutdown()
-        echo_listen()
+        request = echo_listen()
 
         # queue job
-        queue_job()
+        queue_job(request)
 
         # overkill method to start a worker via redis
         signal_boot()
@@ -49,21 +49,36 @@ class Controller:
         result = job_check()
 
         # publish results
-        return_data = format_data(result)
-        self.db.publish(self.queue_name, return_data)
+        self.db.publish(self.queue_name, result)
 
-    def format_data(self, result):
+    def queue_job(self, request):
         """
+        Args:
+            request ():
         """
-        TODO
+        # parse request
+        disposable_income = request['disposable_income']
+        annual_529_rate   = request['annual_529_rate']
+        years_to_529_withdrawal = request['years_to_529_withdrawal']
+        mortgage_principal = request['mortgage_principal']
+        monthly_retirement = request['monthly_retirement']
+        annual_401k_rate = request['annual_401k_rate']
+        past_401k_contributions = request['past_401k_contributions']
+        years_to_401k_withdrawal = request['years_to_401k_withdrawal']
+        state_tuition = request['state_tuition']
 
-        return data
-
-    def queue_job(self):
-        """
-        """
         # subprocess call to bin/optimal_allocation.py
-        a = subprocess.run(['python', ALLOCATION_CALC], capture_output=True, text=True)
+
+        a = subprocess.run(['python', ALLOCATION_CALC,
+            '--disposable_income=' + str(disposable_income), 
+            '--annual_529_rate=' + str(annual_529_rate), 
+            '--years_to_529_withdrawal=' + str(years_to_529_withdrawal), 
+            '--mortgage_principal=' + str(mortgage_principal), 
+            '--monthly_retirement=' + str(monthly_retirement), 
+            '--annual_401k_rate=' + str(annual_401k_rate), 
+            '--past_401k_contributions=' + str(past_401k_contributions), 
+            '--years_to_401k_withdrawal=' + str(years_to_401k_withdrawal),
+            '--state_tuition=' + str(state_tuition)], capture_output=True, text=True)
 
     def start_worker(self):
         """
@@ -107,11 +122,18 @@ class Controller:
     def echo_listen(self):
         """ contrived pulse of a pubsub listen with worker response
         """
+        request = None
+
         # listen and shutdown/bootup workers accordingly
         for message in self.p.listen():
             if 'delete' in message:
                 shutdown_worker()
             elif 'boot' in message:
                 start_worker()
+            else:
+                # handle the request
+                request = message
+
+        return request
 
 ALLOCATION_CALC = 'bin/optimal_allocation.py'
