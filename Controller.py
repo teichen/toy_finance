@@ -46,13 +46,18 @@ class Controller:
         echo_listen()
 
         # check for completion
-        job_check()
+        result = job_check()
 
-        # parse results
+        # publish results
+        return_data = format_data(result)
+        self.db.publish(self.queue_name, return_data)
 
-    allocation = optimal_allocation(req)
-    return_data = format_data(allocation)
-    self.db.publish(self.queue_name, return_data)
+    def format_data(self, result):
+        """
+        """
+        TODO
+
+        return data
 
     def queue_job(self):
         """
@@ -76,8 +81,11 @@ class Controller:
         """
         while True:
             job = Job.fetch(job_id, connection=self.db)
+            result = job.latest_result()
             if job.is_finished:
                 break
+
+        return result
 
     def subscribe(self):
         """ subscribe to redis via pubsub
