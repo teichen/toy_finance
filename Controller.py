@@ -112,7 +112,7 @@ class Controller:
     def signal_shutdown(self):
         """
         """
-        self.db.rpush('test', 'shutdown'
+        self.db.rpush('test', 'shutdown')
 
     def signal_boot(self):
         """
