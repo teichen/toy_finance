@@ -26,27 +26,23 @@ class Controller:
 
         self.db = StrictRedis(host=redis_address, port=redis_port, db=0)
 
-        redis_url = 'redis://' + redis_address + ':' + str(redis_port)
-        redis_conn = redis.from_url(redis_url)
-        self.queue = Queue(self.queue_name, default_timeout=10000000, connection=redis_conn)
-
     def run(self):
         """
         """
         # workers off by default
-        subscribe()
-        signal_shutdown()
-        request = echo_listen()
+        self.subscribe()
+        self.signal_shutdown()
+        request = self.echo_listen()
 
         # queue job
-        queue_job(request)
+        self.queue_job(request)
 
         # overkill method to start a worker via redis
-        signal_boot()
-        echo_listen()
+        self.signal_boot()
+        self.echo_listen()
 
         # check for completion
-        result = job_check()
+        result = self.job_check()
 
         # publish results
         self.db.publish(self.queue_name, result)
@@ -83,7 +79,8 @@ class Controller:
     def start_worker(self):
         """
         """
-        w = Worker(self.queue, connection=self.db, name='test')
+        #w = Worker(self.queue, connection=self.db, name='test')
+        w = Worker(self.queue_name, connection=self.db, name='test')
         w.work(burst=True) # stop after all jobs processed
 
     def shutdown_worker():
@@ -135,5 +132,11 @@ class Controller:
                 request = message
 
         return request
+
+def run_controller():
+
+    c = Controller()
+    c.run()
+    return 0.0
 
 ALLOCATION_CALC = 'bin/optimal_allocation.py'

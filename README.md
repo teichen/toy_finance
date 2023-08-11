@@ -27,3 +27,8 @@ python bin/run_controller.py
 
 # to start the application
 ./run_application.sh
+
+# to stop redis db
+screen -r redis
+redis-cli shutdown
+exit
