@@ -32,54 +32,28 @@ class Controller:
         # workers off by default
         self.subscribe()
         self.signal_shutdown()
-        request = self.echo_listen()
-
-        # queue job
-        self.queue_job(request)
+        self.echo_listen()
 
         # overkill method to start a worker via redis
         self.signal_boot()
         self.echo_listen()
 
+        # test job already queued outside the controller
+
         # check for completion
+        print('job_check')
         result = self.job_check()
 
         # publish results
+        print('publish')
         self.db.publish(self.queue_name, result)
 
-    def queue_job(self, request):
-        """
-        Args:
-            request ():
-        """
-        # parse request
-        disposable_income = request['disposable_income']
-        annual_529_rate   = request['annual_529_rate']
-        years_to_529_withdrawal = request['years_to_529_withdrawal']
-        mortgage_principal = request['mortgage_principal']
-        monthly_retirement = request['monthly_retirement']
-        annual_401k_rate = request['annual_401k_rate']
-        past_401k_contributions = request['past_401k_contributions']
-        years_to_401k_withdrawal = request['years_to_401k_withdrawal']
-        state_tuition = request['state_tuition']
-
-        # subprocess call to bin/optimal_allocation.py
-
-        a = subprocess.run(['python', ALLOCATION_CALC,
-            '--disposable_income=' + str(disposable_income), 
-            '--annual_529_rate=' + str(annual_529_rate), 
-            '--years_to_529_withdrawal=' + str(years_to_529_withdrawal), 
-            '--mortgage_principal=' + str(mortgage_principal), 
-            '--monthly_retirement=' + str(monthly_retirement), 
-            '--annual_401k_rate=' + str(annual_401k_rate), 
-            '--past_401k_contributions=' + str(past_401k_contributions), 
-            '--years_to_401k_withdrawal=' + str(years_to_401k_withdrawal),
-            '--state_tuition=' + str(state_tuition)], capture_output=True, text=True)
+        self.signal_shutdown()
+        self.echo_listen()
 
     def start_worker(self):
         """
         """
-        #w = Worker(self.queue, connection=self.db, name='test')
         w = Worker(self.queue_name, connection=self.db, name='test')
         w.work(burst=True) # stop after all jobs processed
 
@@ -107,12 +81,12 @@ class Controller:
         self.p.subscribe(self.queue_name)
 
     def signal_shutdown(self):
-        """
+        """ push a shutdown message
         """
         self.db.rpush('test', 'shutdown')
 
     def signal_boot(self):
-        """
+        """ remove a shutdown message
         """
         self.db.lrem('test', 0, 'shutdown')
 
@@ -124,12 +98,14 @@ class Controller:
         # listen and shutdown/bootup workers accordingly
         for message in self.p.listen():
             if 'delete' in message:
-                shutdown_worker()
+                self.shutdown_worker()
             elif 'boot' in message:
-                start_worker()
+                self.start_worker()
             else:
                 # handle the request
                 request = message
+
+            break
 
         return request
 
@@ -139,4 +115,3 @@ def run_controller():
     c.run()
     return 0.0
 
-ALLOCATION_CALC = 'bin/optimal_allocation.py'
