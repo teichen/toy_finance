@@ -1,7 +1,6 @@
 import os
 import redis
 from rq.registry import StartedJobRegistry, FailedJobRegistry, FinishedJobRegistry
-import time
 from rq import Queue
 from Controller import run_controller
 from test_job import test_job
@@ -46,7 +45,6 @@ def run():
         registry_failed.remove(jid)
     for jid in registry_finished.get_job_ids():
         registry_finished.remove(jid)
-
 
 if __name__ == "__main__":
     run()

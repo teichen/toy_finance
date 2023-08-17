@@ -6,8 +6,9 @@ from redis import StrictRedis
 from rq import Queue, Worker
 from rq.job import Job
 from rq.command import send_shutdown_command
+import time
 
-job_id = 'test'
+PUBSUB_TIMEOUT = 5
 
 class Controller:
     __metaclass__ = abc.ABCMeta
@@ -29,10 +30,7 @@ class Controller:
     def run(self):
         """
         """
-        # workers off by default
         self.subscribe()
-        self.signal_shutdown()
-        self.echo_listen()
 
         # overkill method to start a worker via redis
         self.signal_boot()
@@ -40,13 +38,8 @@ class Controller:
 
         # test job already queued outside the controller
 
-        # check for completion
-        print('job_check')
-        result = self.job_check()
-
         # publish results
-        print('publish')
-        self.db.publish(self.queue_name, result)
+        # self.db.publish(self.queue_name, result)
 
         self.signal_shutdown()
         self.echo_listen()
@@ -54,24 +47,13 @@ class Controller:
     def start_worker(self):
         """
         """
-        w = Worker(self.queue_name, connection=self.db, name='test')
+        w = Worker(self.queue_name, connection=self.db, name='test_worker')
         w.work(burst=True) # stop after all jobs processed
 
-    def shutdown_worker():
+    def shutdown_worker(self):
         """ send shutdown signal (similar to SIGINT) to a worker
         """
-        send_shutdown_command(self.db, 'test')
-
-    def job_check(self):
-        """ wait by iteratively checking if jobs complete
-        """
-        while True:
-            job = Job.fetch(job_id, connection=self.db)
-            result = job.latest_result()
-            if job.is_finished:
-                break
-
-        return result
+        send_shutdown_command(self.db, 'test_worker')
 
     def subscribe(self):
         """ subscribe to redis via pubsub
@@ -81,14 +63,14 @@ class Controller:
         self.p.subscribe(self.queue_name)
 
     def signal_shutdown(self):
-        """ push a shutdown message
         """
-        self.db.rpush('test', 'shutdown')
+        """
+        self.db.publish(self.queue_name, 'shutdown')
 
     def signal_boot(self):
-        """ remove a shutdown message
         """
-        self.db.lrem('test', 0, 'shutdown')
+        """
+        self.db.publish(self.queue_name, 'boot')
 
     def echo_listen(self):
         """ contrived pulse of a pubsub listen with worker response
@@ -96,16 +78,20 @@ class Controller:
         request = None
 
         # listen and shutdown/bootup workers accordingly
-        for message in self.p.listen():
-            if 'delete' in message:
-                self.shutdown_worker()
-            elif 'boot' in message:
-                self.start_worker()
-            else:
-                # handle the request
-                request = message
+        t0 = time.time()
+        while True:
+            message = self.p.get_message()
+            if message:
+                if 'shutdown' in str(message):
+                    self.shutdown_worker()
+                elif 'boot' in str(message):
+                    self.start_worker()
+                else:
+                    # handle the request
+                    request = message
 
-            break
+            if time.time() - t0 > PUBSUB_TIMEOUT:
+                break
 
         return request
 
