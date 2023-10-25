@@ -9,6 +9,7 @@ from rq.command import send_shutdown_command
 import time
 
 PUBSUB_TIMEOUT = 5
+CONTROLLER_TIMEOUT = 3600
 
 class Controller:
     __metaclass__ = abc.ABCMeta
@@ -34,15 +35,16 @@ class Controller:
 
         # overkill method to start a worker via redis
         self.signal_boot()
-        self.echo_listen()
+        self.echo_listen(PUBSUB_TIMEOUT)
 
         # test job already queued outside the controller
+        self.echo_listen(CONTROLLER_TIMEOUT)
 
         # publish results
         # self.db.publish(self.queue_name, result)
 
         self.signal_shutdown()
-        self.echo_listen()
+        self.echo_listen(PUBSUB_TIMEOUT)
 
     def start_worker(self):
         """
@@ -72,7 +74,7 @@ class Controller:
         """
         self.db.publish(self.queue_name, 'boot')
 
-    def echo_listen(self):
+    def echo_listen(self, timeout):
         """ contrived pulse of a pubsub listen with worker response
         """
         request = None
@@ -90,7 +92,7 @@ class Controller:
                     # handle the request
                     request = message
 
-            if time.time() - t0 > PUBSUB_TIMEOUT:
+            if time.time() - t0 > timeout:
                 break
 
         return request
