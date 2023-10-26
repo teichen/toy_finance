@@ -37,7 +37,7 @@ class Controller:
         self.signal_boot()
         self.echo_listen(PUBSUB_TIMEOUT)
 
-        # test job already queued outside the controller
+        # waiting period for jobs to be queued outside the controller
         self.echo_listen(CONTROLLER_TIMEOUT)
 
         # publish results
@@ -50,7 +50,7 @@ class Controller:
         """
         """
         w = Worker(self.queue_name, connection=self.db, name='test_worker')
-        w.work(burst=True) # stop after all jobs processed
+        w.work(burst=False)
 
     def shutdown_worker(self):
         """ send shutdown signal (similar to SIGINT) to a worker
@@ -91,6 +91,7 @@ class Controller:
                 else:
                     # handle the request
                     request = message
+                    print(request)
 
             if time.time() - t0 > timeout:
                 break

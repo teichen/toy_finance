@@ -55,8 +55,6 @@ def optimal_allocation(disposable_income, annual_529_rate, past_529_contribution
     allocation['retirement_contribution'] = retirement
     allocation['529_contribution']        = contribution_529
 
-    print(allocation)
-
     return allocation
 
 def objective(x, disposable_income, annual_529_rate, past_529_contributions,
@@ -167,8 +165,14 @@ if __name__ == '__main__':
     mortgage_appreciation = float(config['mortgage']['appreciation'])
     tax_rate_401k = float(config['tax']['rate'])
 
-    optimal_allocation(inputs.disposable_income, inputs.annual_529_rate, inputs.past_529_contributions,
+    allocation = optimal_allocation(inputs.disposable_income, inputs.annual_529_rate, inputs.past_529_contributions,
             inputs.years_to_529_withdrawal, inputs.mortgage_principal, inputs.monthly_retirement, inputs.annual_401k_rate,
             inputs.past_401k_contributions, inputs.years_to_401k_withdrawal, inputs.state_tuition,
             mortgage_rate, mortgage_initial_principal, mortgage_downpayment, mortgage_appreciation, tax_rate_401k)
+
+    f = open('allocation.txt', 'w')
+    f.write('mortgage_payment, retirement_contribution, 529_contribution\n')
+    f.write('%.4f,%.4f,%.4f' % (allocation['mortgage_payment'], 
+        allocation['retirement_contribution'], allocation['529_contribution']))
+    f.close()
 

@@ -35,10 +35,9 @@ def run():
             "years_to_401k_withdrawal": 25, 
             "state_tuition": 12000}
 
-    job = queue.enqueue(test_job, args=(req, ), job_id=job_id)
+    job = queue.enqueue(test_job, args=(req, ), job_id=job_id, job_timeout=3600)
 
-    # TODO: result currently only in stdout of Controller (messages kept in db from last session)
-    # need to create job.return_value()
+    print(job.return_value())
 
 if __name__ == "__main__":
     run()

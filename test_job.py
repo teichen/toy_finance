@@ -1,8 +1,5 @@
 import subprocess
 
-#def test_job():
-#    return 3.14159
-
 def test_job(req):
     """
     """
@@ -17,7 +14,5 @@ def test_job(req):
         '--past_401k_contributions=' + str(req['past_401k_contributions']), 
         '--years_to_401k_withdrawal=' + str(req['years_to_401k_withdrawal']),
         '--state_tuition=' + str(req['state_tuition'])], capture_output=True, text=True)
-
-    print(a) # TODO: currently results only in controller stdout
 
 ALLOCATION_CALC = 'bin/optimal_allocation.py'

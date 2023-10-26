@@ -28,6 +28,8 @@ python bin/run_controller.py
 # to start the application
 ./run_application.sh
 
+# results can be found in allocation.txt
+
 # to stop redis db
 screen -r redis
 redis-cli shutdown

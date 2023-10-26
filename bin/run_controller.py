@@ -23,6 +23,7 @@ def run():
     redis_conn = redis.from_url(redis_url)
     redis_conn.ping()
     print('connected to redis "{}"'.format(redis_url))
+
     queue = Queue(queue_name, default_timeout=10000000, connection=redis_conn)
 
     registry_started = StartedJobRegistry(queue=queue)
@@ -32,6 +33,7 @@ def run():
     # controller will spawn a worker to pick up the test job
     run_controller()
 
+    # finally, print some diagostics
     print('%s\t%s\t%s' % (registry_started.count, registry_failed.count, registry_finished.count))
 
     for jid in registry_started.get_job_ids():

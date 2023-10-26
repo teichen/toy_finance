@@ -26,4 +26,3 @@ a = subprocess.run(['python', ALLOCATION_CALC,
     '--years_to_401k_withdrawal=' + str(req['years_to_401k_withdrawal']),
     '--state_tuition=' + str(req['state_tuition'])], capture_output=True, text=True)
 
-print(a) # TODO: currently results only in stdout
