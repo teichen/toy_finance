@@ -1,3 +1,4 @@
+# test the optimal allocation method without a queueing system
 import subprocess
 
 ALLOCATION_CALC = 'bin/optimal_allocation.py'

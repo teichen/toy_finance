@@ -3,6 +3,7 @@
     TODO: investigate Cherrypy REST API
 """
 from flask import Flask, jsonify, request
+import json
 import configparser
 import numpy as np
 from scipy import optimize
@@ -10,6 +11,7 @@ import redis
 from redis import StrictRedis
 from rq import Queue
 from rq.job import Job
+import time
 
 app = Flask(__name__)
 
@@ -39,14 +41,13 @@ def allocation_job():
     allocations = []
 
     for req in allocation_requests:
-        req_json = jsonify(req)
+        req_json = json.dumps(req)
 
-        #db.rpush(name, data) # push any requisite data
         db.publish(queue_name, req_json) # publish message
 
-        # TODO: wait time
+        time.sleep(5)
 
-        job = Job.fetch(id=job_id, connection=redis)
+        job = Job.fetch(id=job_id, connection=redis_conn)
         for result in job.results():
             if result.Type.SUCCESSFUL:
                 allocations += [result.return_value]

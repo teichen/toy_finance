@@ -7,7 +7,7 @@ from test_job import test_job
 job_id = 'test'
 
 def run():
-    """
+    """ test queueing a optimal allocation job outside of the Controller
     """
     config_path = './finances.ini'
 
@@ -36,8 +36,6 @@ def run():
             "state_tuition": 12000}
 
     job = queue.enqueue(test_job, args=(req, ), job_id=job_id, job_timeout=3600)
-
-    print(job.return_value())
 
 if __name__ == "__main__":
     run()

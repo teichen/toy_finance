@@ -1,12 +1,16 @@
 import abc
 import configparser
 import subprocess
+import json
 import redis
 from redis import StrictRedis
 from rq import Queue, Worker
 from rq.job import Job
 from rq.command import send_shutdown_command
 import time
+from test_job import test_job
+
+job_id = 'test'
 
 PUBSUB_TIMEOUT = 5
 CONTROLLER_TIMEOUT = 3600
@@ -24,7 +28,11 @@ class Controller:
 
         redis_address = str(config['redis']['address'])
         redis_port    = str(config['redis']['port'])
-        self.queue_name    = str(config['redis']['queue'])
+        redis_url = 'redis://' + redis_address + ':' + str(redis_port)
+        redis_conn = redis.from_url(redis_url)
+
+        self.queue_name = str(config['redis']['queue'])
+        self.queue      = Queue(self.queue_name, default_timeout=10000000, connection=redis_conn)
 
         self.db = StrictRedis(host=redis_address, port=redis_port, db=0)
 
@@ -88,10 +96,14 @@ class Controller:
                     self.shutdown_worker()
                 elif 'boot' in str(message):
                     self.start_worker()
+                elif 'subscribe' in str(message):
+                    pass
                 else:
                     # handle the request
-                    request = message
-                    print(request)
+                    request = json.loads(message["data"].decode('utf-8'))
+                    job = self.queue.enqueue(test_job, args=(request, ), job_id=job_id, job_timeout=3600)
+
+                    break # TODO: handle multiple jobs
 
             if time.time() - t0 > timeout:
                 break
