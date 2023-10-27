@@ -31,10 +31,12 @@ def run():
     registry_finished = FinishedJobRegistry(queue=queue)
 
     # controller will spawn a worker to pick up the test job
+    print('run controller')
     run_controller()
 
     # finally, print some diagostics
-    print('%s\t%s\t%s' % (registry_started.count, registry_failed.count, registry_finished.count))
+    print('started jobs, failed jobs, finished jobs')
+    print('%s, %s, %s' % (registry_started.count, registry_failed.count, registry_finished.count))
 
     for jid in registry_started.get_job_ids():
         registry_started.remove(jid)

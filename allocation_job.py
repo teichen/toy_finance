@@ -1,6 +1,6 @@
 import subprocess
 
-def test_job(req):
+def allocation_job(req):
     """
     """
     a = subprocess.run(['python', ALLOCATION_CALC,

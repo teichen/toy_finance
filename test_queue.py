@@ -2,7 +2,7 @@ import os
 import redis
 from rq import Queue
 import configparser
-from test_job import test_job
+from allocation_job import allocation_job
 
 job_id = 'test'
 
@@ -35,7 +35,7 @@ def run():
             "years_to_401k_withdrawal": 25, 
             "state_tuition": 12000}
 
-    job = queue.enqueue(test_job, args=(req, ), job_id=job_id, job_timeout=3600)
+    job = queue.enqueue(allocation_job, args=(req, ), job_id=job_id, job_timeout=3600)
 
 if __name__ == "__main__":
     run()

@@ -43,10 +43,6 @@ def allocation_job():
     for req in allocation_requests:
         req_json = json.dumps(req)
 
-        db.publish(queue_name, req_json) # publish message
-
-        time.sleep(5)
-
         job = Job.fetch(id=job_id, connection=redis_conn)
         for result in job.results():
             if result.Type.SUCCESSFUL:
@@ -59,8 +55,12 @@ def allocation_job():
 @app.route('/allocation_requests', methods=['POST'])
 
 def add_request():
+    req_json = json.dumps(request.get_json())
 
-    allocation_requests.append(request.get_json())
+    db.publish(queue_name, req_json) # publish message
+    time.sleep(5)
+
+    allocation_requests.append(req_json)
 
     return '', 204
 

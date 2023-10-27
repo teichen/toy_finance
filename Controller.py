@@ -8,12 +8,11 @@ from rq import Queue, Worker
 from rq.job import Job
 from rq.command import send_shutdown_command
 import time
-from test_job import test_job
+from allocation_job import allocation_job
 
 job_id = 'test'
 
-PUBSUB_TIMEOUT = 5
-CONTROLLER_TIMEOUT = 3600
+TIMEOUT = 3600
 
 class Controller:
     __metaclass__ = abc.ABCMeta
@@ -39,26 +38,21 @@ class Controller:
     def run(self):
         """
         """
+        print('subscribe')
         self.subscribe()
 
-        # overkill method to start a worker via redis
-        self.signal_boot()
-        self.echo_listen(PUBSUB_TIMEOUT)
-
         # waiting period for jobs to be queued outside the controller
-        self.echo_listen(CONTROLLER_TIMEOUT)
+        print('standby for work')
+        self.echo_listen()
 
-        # publish results
-        # self.db.publish(self.queue_name, result)
-
-        self.signal_shutdown()
-        self.echo_listen(PUBSUB_TIMEOUT)
+        print('unsubscribe')
+        self.unsubscribe()
 
     def start_worker(self):
-        """
+        """ start rq Worker
         """
         w = Worker(self.queue_name, connection=self.db, name='test_worker')
-        w.work(burst=False)
+        w.work(burst=True)
 
     def shutdown_worker(self):
         """ send shutdown signal (similar to SIGINT) to a worker
@@ -72,6 +66,12 @@ class Controller:
         self.p = self.db.pubsub()
         self.p.subscribe(self.queue_name)
 
+    def unsubscribe(self):
+        """ unsubscribe to redis pubsub
+        """
+        # unsubscribe to the redis TaskQueue
+        self.p.close()
+
     def signal_shutdown(self):
         """
         """
@@ -82,8 +82,8 @@ class Controller:
         """
         self.db.publish(self.queue_name, 'boot')
 
-    def echo_listen(self, timeout):
-        """ contrived pulse of a pubsub listen with worker response
+    def echo_listen(self):
+        """ a pubsub listen for worker shutdown/boot and job queueing
         """
         request = None
 
@@ -101,11 +101,12 @@ class Controller:
                 else:
                     # handle the request
                     request = json.loads(message["data"].decode('utf-8'))
-                    job = self.queue.enqueue(test_job, args=(request, ), job_id=job_id, job_timeout=3600)
+                    job = self.queue.enqueue(allocation_job, args=(request, ), job_id=job_id, job_timeout=3600)
 
-                    break # TODO: handle multiple jobs
+                    # start a worker via redis in burst mode (will shutdown after completion)
+                    self.signal_boot()
 
-            if time.time() - t0 > timeout:
+            if time.time() - t0 > TIMEOUT:
                 break
 
         return request
