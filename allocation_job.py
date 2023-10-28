@@ -1,7 +1,7 @@
 import subprocess
 
 def allocation_job(req):
-    """
+    """ parse job request and run the optimal_allocation.py script
     """
     a = subprocess.run(['python', ALLOCATION_CALC,
         '--disposable_income=' + str(req['disposable_income']), 

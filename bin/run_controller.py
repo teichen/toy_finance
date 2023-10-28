@@ -8,7 +8,7 @@ import configparser
 job_id = 'test'
 
 def run():
-    """
+    """ run the worker controller and job queueing system
     """
     config_path = './finances.ini'
 
@@ -21,8 +21,6 @@ def run():
 
     redis_url = 'redis://' + redis_address + ':' + str(redis_port)
     redis_conn = redis.from_url(redis_url)
-    redis_conn.ping()
-    print('connected to redis "{}"'.format(redis_url))
 
     queue = Queue(queue_name, default_timeout=10000000, connection=redis_conn)
 
@@ -31,7 +29,6 @@ def run():
     registry_finished = FinishedJobRegistry(queue=queue)
 
     # controller will spawn a worker to pick up the test job
-    print('run controller')
     run_controller()
 
     # finally, print some diagostics

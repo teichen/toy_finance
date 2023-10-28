@@ -37,7 +37,8 @@ allocation_requests = []
 @app.route("/allocation_requests")
 
 def allocation_job():
-
+    """ get job requests and fetch results
+    """
     allocations = []
 
     for req in allocation_requests:
@@ -55,10 +56,12 @@ def allocation_job():
 @app.route('/allocation_requests', methods=['POST'])
 
 def add_request():
+    """ publish job requests to redis
+    """
     req_json = json.dumps(request.get_json())
 
     db.publish(queue_name, req_json) # publish message
-    time.sleep(5)
+    time.sleep(2)
 
     allocation_requests.append(req_json)
 

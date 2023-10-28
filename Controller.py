@@ -36,16 +36,14 @@ class Controller:
         self.db = StrictRedis(host=redis_address, port=redis_port, db=0)
 
     def run(self):
+        """ run a worker Controller and subscribe to redis via pubsub for job requests
         """
-        """
-        print('subscribe')
+        # redis pubsub
         self.subscribe()
 
         # waiting period for jobs to be queued outside the controller
-        print('standby for work')
-        self.echo_listen()
+        self.listen_queue_work()
 
-        print('unsubscribe')
         self.unsubscribe()
 
     def start_worker(self):
@@ -60,30 +58,30 @@ class Controller:
         send_shutdown_command(self.db, 'test_worker')
 
     def subscribe(self):
-        """ subscribe to redis via pubsub
+        """ subscribe to redis TaskQueue via pubsub
         """
-        # subscribe to the redis TaskQueue
         self.p = self.db.pubsub()
         self.p.subscribe(self.queue_name)
 
     def unsubscribe(self):
-        """ unsubscribe to redis pubsub
+        """ unsubscribe to redis TaskQueue pubsub
         """
-        # unsubscribe to the redis TaskQueue
         self.p.close()
 
     def signal_shutdown(self):
-        """
+        """ [unused] publish shutdown message which can be later read
+            to send shutdown signal for (non-burst) rq Worker
         """
         self.db.publish(self.queue_name, 'shutdown')
 
     def signal_boot(self):
-        """
+        """ publish boot signal following a job request which can be
+            later read to start rq Worker
         """
         self.db.publish(self.queue_name, 'boot')
 
-    def echo_listen(self):
-        """ a pubsub listen for worker shutdown/boot and job queueing
+    def listen_queue_work(self):
+        """ a pubsub listen for worker boot and job queueing
         """
         request = None
 

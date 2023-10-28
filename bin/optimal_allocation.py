@@ -114,7 +114,13 @@ def objective(x, disposable_income, annual_529_rate, past_529_contributions,
     return net_worth
 
 def mortgage_interest(r, p0, p, prepayment):
-    """
+    """ cumulative mortgage interest
+
+    Args:
+        r (float): interest rate
+        p0 (float): initial principal
+        p (float): principal
+        prepayment (float): prepayment
     """
     interest = 0.0
     
@@ -131,7 +137,13 @@ def mortgage_interest(r, p0, p, prepayment):
     return interest
 
 def compound_interest(r, p0, contribution, n):
-    """
+    """ compound interest
+
+    Args:
+        r (float):
+        p0 (float):
+        contribution (float):
+        n (int):
     """
     p = p0 + contribution
     interest = p * ((1 + r) ** n - p)
