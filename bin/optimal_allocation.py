@@ -88,8 +88,9 @@ def objective(x, disposable_income, annual_529_rate, past_529_contributions,
     r  = mortgage_rate / 100 / 12
     p0 = mortgage_initial_principal
     p  = mortgage_principal
-    mortgage_payments, future_mortgage_interest, future_home_value = mortgage_interest_value(r, p0, p, prepayment, 
-                                                                    mortgage_downpayment, mortgage_appreciation)
+    mortgage_payments, future_mortgage_interest = mortgage_interest(r, p0, p, prepayment, mortgage_downpayment)
+
+    future_home_value = (p0 + mortgage_downpayment) * (1.0 + mortgage_appreciation / 100 / 12)
 
     r  = annual_529_rate / 100 / 12 # assume time-local rate carries into the future
     p0 = past_529_contributions
@@ -106,13 +107,14 @@ def objective(x, disposable_income, annual_529_rate, past_529_contributions,
     total_401k    *= (1.0 - tax_rate_401k / 100 / 12) # taxed
 
     # net_worth = assets - liabilities
-    # TODO: account for inflation
+    # TODO: account for inflation (drawing 529, 401k, paying off mortgage at different times)
 
     net_worth = total_401k + total_529 + future_home_value - future_mortgage_interest
+    minimize_objective = -net_worth
 
-    return net_worth
+    return minimize_objective
 
-def mortgage_interest_value(r, p0, p, prepayment, downpayment, mortgage_appreciation):
+def mortgage_interest(r, p0, p, prepayment, downpayment):
     """ cumulative mortgage interest
 
     Args:
@@ -120,6 +122,7 @@ def mortgage_interest_value(r, p0, p, prepayment, downpayment, mortgage_apprecia
         p0 (float): initial principal
         p (float): principal
         prepayment (float): prepayment
+        downpayment (float):
     """
     interest = 0.0
     
@@ -127,20 +130,14 @@ def mortgage_interest_value(r, p0, p, prepayment, downpayment, mortgage_apprecia
 
     p = p - prepayment # check with lender to prepay principal rather than future interest
 
-    future_home_value = (p0 + downpayment) - p
-
     payments = 0
     while p > 0 and payments < 30 * 12:
         interest += p * r
 
-        #future_home_value *= (1.0 + mortgage_appreciation / 100 / 12)
-        if (p * r - minimum_monthly_payment) < 0:
-            future_home_value += minimum_monthly_payment - p * r
-
         p += p * r - minimum_monthly_payment
         payments += 1
 
-    return payments, interest, future_home_value
+    return payments, interest
 
 def compound_interest(r, p0, contribution, n):
     """ compound interest
