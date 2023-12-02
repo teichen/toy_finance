@@ -4,7 +4,7 @@ import configparser
 from scipy import optimize
 
 def optimal_allocation(disposable_income, annual_529_rate, past_529_contributions,
-            years_to_529_withdrawal, mortgage_principal, monthly_retirement, annual_401k_rate,
+            years_to_529_withdrawal, mortgage_principal, annual_401k_rate,
             past_401k_contributions, years_to_401k_withdrawal,
             mortgage_rate, mortgage_initial_principal, mortgage_downpayment, mortgage_appreciation, tax_rate_401k):
     """ allocation of disposable income based on future assets and liabilities
@@ -15,7 +15,6 @@ def optimal_allocation(disposable_income, annual_529_rate, past_529_contribution
         past_529_contributions (float):
         years_to_529_withdrawal (float):
         mortgage_principal (float):
-        monthly_retirement (float):
         annual_401k_rate (float):
         past_401k_contributions (float):
         years_to_401k_withdrawal (float):
@@ -33,7 +32,7 @@ def optimal_allocation(disposable_income, annual_529_rate, past_529_contribution
     x0 = np.array([prepayment, contribution])
 
     alloc = optimize.minimize(objective, x0, args=(disposable_income, annual_529_rate,
-        past_529_contributions, years_to_529_withdrawal, mortgage_principal, monthly_retirement,
+        past_529_contributions, years_to_529_withdrawal, mortgage_principal,
         annual_401k_rate, past_401k_contributions, years_to_401k_withdrawal,
         mortgage_rate, mortgage_initial_principal, mortgage_downpayment, mortgage_appreciation, tax_rate_401k),
         method='SLSQP',
@@ -63,7 +62,7 @@ def optimal_allocation(disposable_income, annual_529_rate, past_529_contribution
     return allocation
 
 def objective(x, disposable_income, annual_529_rate, past_529_contributions,
-            years_to_529_withdrawal, mortgage_principal, monthly_retirement, annual_401k_rate,
+            years_to_529_withdrawal, mortgage_principal, annual_401k_rate,
             past_401k_contributions, years_to_401k_withdrawal,
             mortgage_rate, mortgage_initial_principal, mortgage_downpayment, mortgage_appreciation, tax_rate_401k):
     """
@@ -74,7 +73,6 @@ def objective(x, disposable_income, annual_529_rate, past_529_contributions,
         past_529_contributions (float):
         years_to_529_withdrawal (float):
         mortgage_principal (float):
-        monthly_retirement (float):
         annual_401k_rate (float):
         past_401k_contributions (float):
         years_to_401k_withdrawal (float):
@@ -132,10 +130,10 @@ def mortgage_interest_value(r, p0, p, prepayment, downpayment, mortgage_apprecia
     future_home_value = (p0 + downpayment) - p
 
     payments = 0
-    while p > 0 and payments < 30*12:
+    while p > 0 and payments < 30 * 12:
         interest += p * r
 
-        future_home_value *= (1.0 + mortgage_appreciation / 100 / 12)
+        #future_home_value *= (1.0 + mortgage_appreciation / 100 / 12)
         if (p * r - minimum_monthly_payment) < 0:
             future_home_value += minimum_monthly_payment - p * r
 
@@ -166,7 +164,6 @@ if __name__ == '__main__':
     arguments.add_argument('--past_529_contributions', help='past 529 contributions', required=True, type=float)
     arguments.add_argument('--years_to_529_withdrawal', help='years to 529 withdrawal', required=True, type=float)
     arguments.add_argument('--mortgage_principal', help='mortgage principal', required=True, type=float)
-    arguments.add_argument('--monthly_retirement', help='monthly retirement', required=True, type=float)
     arguments.add_argument('--annual_401k_rate', help='annual_401k_rate', required=True, type=float)
     arguments.add_argument('--past_401k_contributions', help='past 401k contributions', required=True, type=float)
     arguments.add_argument('--years_to_401k_withdrawal', help='years to 401k withdrawal', required=True, type=float)
@@ -185,7 +182,7 @@ if __name__ == '__main__':
     tax_rate_401k         = float(config['tax']['rate'])
 
     allocation = optimal_allocation(inputs.disposable_income, inputs.annual_529_rate, inputs.past_529_contributions,
-            inputs.years_to_529_withdrawal, inputs.mortgage_principal, inputs.monthly_retirement, inputs.annual_401k_rate,
+            inputs.years_to_529_withdrawal, inputs.mortgage_principal, inputs.annual_401k_rate,
             inputs.past_401k_contributions, inputs.years_to_401k_withdrawal,
             mortgage_rate, mortgage_initial_principal, mortgage_downpayment, mortgage_appreciation, tax_rate_401k)
 

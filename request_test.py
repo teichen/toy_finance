@@ -1,12 +1,13 @@
-# test the optimal allocation method without a queueing system
+# test the optimal allocation request
 import os
 import csv
 import unittest
 import subprocess
+import pytest
 
 ALLOCATION_CALC = 'bin/optimal_allocation.py'
 
-class AllocationTest(unittest.TestCase):
+class RequestTest(unittest.TestCase):
 
     def setUp(self):
         if os.path.isfile('allocation.txt'):
@@ -16,47 +17,41 @@ class AllocationTest(unittest.TestCase):
         if os.path.isfile('allocation.txt'):
             os.remove('allocation.txt')
 
-    def test_allocation(self):
-        """ test proper allocation results for test requests
+    def test_valid_request(self):
+        """ test a valid request
         """
         req = {
                 "disposable_income": 2000, 
                 "past_529_contributions": 10000, 
                 "years_to_529_withdrawal": 15, 
                 "mortgage_principal": 100000, 
-                "monthly_retirement": 4000, 
                 "past_401k_contributions": 30000, 
-                "years_to_401k_withdrawal": 25}
-
-        # case (1) - divert all to mortgage allocation
-        req["annual_529_rate"]  = 0.0
-        req["annual_401k_rate"] = 0.0
-        req["past_529_contributions"] = 0.0
-        req["past_401k_contributions"] = 0.0
-
+                "years_to_401k_withdrawal": 25,
+                "annual_529_rate": 2.0,
+                "annual_401k_rate": 3.0,
+                }
         run_allocation(req)
         allocation = read_allocation('allocation.txt')
 
-        assert allocation['mortgage_payment'] == req["disposable_income"]
+        assert 'mortgage_payment' in allocation
 
-        # case (2) - divert all to retirement allocation
-        req["annual_529_rate"]    = 0.0
-        req["annual_401k_rate"]   = 10.0
-        req["mortgage_principal"] = 100.0
+    def test_bad_request(self):
+        """ test proper allocation results for test requests
+        """
+        req = {
+                "disposable_income": "TYPO", 
+                "past_529_contributions": 10000, 
+                "years_to_529_withdrawal": 15, 
+                "mortgage_principal": 100000, 
+                "past_401k_contributions": 30000, 
+                "years_to_401k_withdrawal": 25,
+                "annual_529_rate": 2.0,
+                "annual_401k_rate": 3.0,
+                }
 
-        run_allocation(req)
-        allocation = read_allocation('allocation.txt')
-
-        assert allocation['retirement_contribution'] == req["disposable_income"]
-
-        # case (3) - divert all to 529 allocation
-        req["annual_529_rate"]  = 100.0
-        req["annual_401k_rate"] = 0.0
-
-        run_allocation(req)
-        allocation = read_allocation('allocation.txt')
-
-        assert allocation['529_contribution'] == req["disposable_income"]
+        with pytest.raises(Exception):
+            run_allocation(req)
+            allocation = read_allocation('allocation.txt')
 
 def read_allocation(results_file):
     """ read the results of an optimal allocation written to disk
@@ -85,7 +80,6 @@ def run_allocation(req):
         '--past_529_contributions=' + str(req['past_529_contributions']),
         '--years_to_529_withdrawal=' + str(req['years_to_529_withdrawal']), 
         '--mortgage_principal=' + str(req['mortgage_principal']), 
-        '--monthly_retirement=' + str(req['monthly_retirement']), 
         '--annual_401k_rate=' + str(req['annual_401k_rate']), 
         '--past_401k_contributions=' + str(req['past_401k_contributions']), 
         '--years_to_401k_withdrawal=' + str(req['years_to_401k_withdrawal'])], capture_output=True, text=True)

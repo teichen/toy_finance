@@ -9,7 +9,6 @@ def allocation_job(req):
         '--past_529_contributions=' + str(req['past_529_contributions']),
         '--years_to_529_withdrawal=' + str(req['years_to_529_withdrawal']), 
         '--mortgage_principal=' + str(req['mortgage_principal']), 
-        '--monthly_retirement=' + str(req['monthly_retirement']), 
         '--annual_401k_rate=' + str(req['annual_401k_rate']), 
         '--past_401k_contributions=' + str(req['past_401k_contributions']), 
         '--years_to_401k_withdrawal=' + str(req['years_to_401k_withdrawal'])], capture_output=True, text=True)

@@ -4,4 +4,5 @@ help:
 	@echo "test - execute testing"
 
 test:
-	pytest test.py
+	pytest request_test.py
+	pytest bin/allocation_test.py
