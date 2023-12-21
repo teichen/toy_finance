@@ -84,5 +84,8 @@ def run_allocation(req):
         '--past_401k_contributions=' + str(req['past_401k_contributions']), 
         '--years_to_401k_withdrawal=' + str(req['years_to_401k_withdrawal'])], capture_output=True, text=True)
 
+    print(a.stdout)
+    print(a.stderr)
+
 if __name__ == "__main__":
         unittest.main()

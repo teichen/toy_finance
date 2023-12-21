@@ -6,3 +6,4 @@ help:
 test:
 	pytest request_test.py
 	pytest bin/allocation_test.py
+	pytest bin/college_savings_test.py
